@@ -25,14 +25,18 @@ mycursor.execute("DROP DATABASE IF EXISTS menagerie")
 
 # Create menagerie database
 
-mycursor.execute("CREATE DATABASE menagarie")
+mycursor.execute("CREATE DATABASE menagerie")
 mycursor.execute("USE menagerie")
 
 # Create pets table
 
+mycursor = mydb.cursor()
+
 mycursor.execute("CREATE TABLE pets (name VARCHAR(20), owner VARCHAR(20), species VARCHAR(20), sex CHAR(1), birth DATE, death Date)")
 
 # Show structure of pet table
+
+mycursor = mydb.cursor()
 
 mycursor.execute("DESCRIBE pets")
 
@@ -40,6 +44,8 @@ for x in mycursor:
     print(x)
 
 # Insert records to table
+
+mycursor = mydb.cursor()
 
 sql = "INSERT INTO pets (name, owner, species, sex, birth, death) VALUES (%s,%s,%s,%s,%s,%s)"
 val = [
@@ -61,6 +67,8 @@ mydb.commit()
 print(mycursor.rowcount, "was inserted.")
 
 # Display all records in pets table
+
+mycursor = mydb.cursor()
 
 mycursor.execute("SELECT * FROM pets")
 
@@ -84,6 +92,8 @@ for x in myresult:
 
 # Show name and birth columns from the pets table
 
+mycursor = mydb.cursor()
+
 mycursor.execute("SELECT name, birth FROM pets")
 
 myresult = mycursor.fetchall()
@@ -93,12 +103,18 @@ for x in myresult:
 
 # Show how many pets each owner has
 
+mycursor = mydb.cursor()
+
 mycursor.execute("SELECT owner, COUNT(*) FROM pets GROUP BY owner")
+
+myresult = mycursor.fetchall()
 
 for x in myresult:
     print (x)
 
 # Show name, birth and month(birth) from pets table
+
+mycursor = mydb.cursor()
 
 mycursor.execute("SELECT name, birth, MONTH(birth) FROM pets ")
 
