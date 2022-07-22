@@ -1,124 +1,146 @@
-# Connect Python to MySQL using MySQL Connector
-
+import time
 import mysql.connector
 
 mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  password=""
+    host="localhost",
+    user="root",
+    password=""
 )
-
-print(mydb)
-
-# Show databases on the MySQL Server
-
 mycursor = mydb.cursor()
+mycursor.execute("USE bank")
 
-mycursor.execute("SHOW DATABASES")
 
-for x in mycursor:
-  print(x)
+def main():
+    print('''
+             _._._                       _._._
+        _|   |_                     _|   |_
+        | ... |_._._._._._._._._._._| ... |
+        | ||| |  o NATIONAL BANK o  | ||| |
+        | """ |  """    """    """  | """ |
+   ())  |[-|-]| [-|-]  [-|-]  [-|-] |[-|-]|  ())
+  (())) |     |---------------------|     | (()))
+ (())())| """ |  """    """    """  | """ |(())())
+ (()))()|[-|-]|  :::   .-"-.   :::  |[-|-]|(()))()
+ ()))(()|     | |~|~|  |_|_|  |~|~| |     |()))(()
+    ||  |_____|_|_|_|__|_|_|__|_|_|_|_____|  ||
+ ~ ~^^ @@@@@@@@@@@@@@/=======\@@@@@@@@@@@@@@ ^^~ ~
+      ^~^~                                ~^~^
+    ''')
 
-# Drop menegarie database if it exists
+    print(f"Welcome to National Bank\n"
+          f"\n1. Log in\n"
+          f"2. Create an account\n")
+    choice = int(input("Enter a selection: "))
 
-mycursor.execute("DROP DATABASE IF EXISTS menagerie")
+    if choice == 1:
+        login()
+    elif choice == 2:
+        create_account()
 
-# Create menagerie database
 
-mycursor.execute("CREATE DATABASE menagerie")
-mycursor.execute("USE menagerie")
+def main_menu(name):
+    print(f"\nPlease Select a Transaction\n"
+          f"\n1. Deposit Money\n"
+          f"2. Withdraw Money\n"
+          f"3. View Balance\n"
+          f"4. End Transaction\n")
+    while True:
+        choice = int(input("Enter a selection: "))
+        print("")
 
-# Create pets table
+        if choice == 1:
+            deposit(name)
+        elif choice == 2:
+            withdraw(name)
+        elif choice == 3:
+            view_balance(name)
+        elif choice == 4:
+            mycursor.close()
+            print("\nThank you for banking with us.")
+            break
+        else:
+            print("\nInvalid Input.")
 
-mycursor = mydb.cursor()
 
-mycursor.execute("CREATE TABLE pets (name VARCHAR(20), owner VARCHAR(20), species VARCHAR(20), sex CHAR(1), birth DATE, death Date)")
+def create_account():
+    name = input("Enter your name: ").lower()
+    pin = int(input("Enter a pin: "))
 
-# Show structure of pet table
+    sql = "INSERT INTO account_info (name, pin, balance) VALUES (%s,%s,%s)"
+    val = [(name, pin, 0)]
 
-mycursor = mydb.cursor()
+    mycursor.executemany(sql, val)
+    mydb.commit()
 
-mycursor.execute("DESCRIBE pets")
+    login()
 
-for x in mycursor:
-    print(x)
 
-# Insert records to table
+def login():
+    while True:
+        print("\nAccount Login")
+        name = input("Enter your name: ").lower()
+        pin = int(input("Enter your pin: "))
+        print("")
 
-mycursor = mydb.cursor()
+        mycursor.execute(f"SELECT * FROM account_info WHERE name ='{name}'")
+        account_data = mycursor.fetchall()
+        try:
+            if pin == account_data[0][1]:
+                loading()
+                print("You are logged in.")
+                main_menu(name)
+                break
+            else:
+                loading()
+                print("Invalid pin. Try again.\n")
+        except IndexError:
+            print("Invalid pin. Try again.\n")
 
-sql = "INSERT INTO pets (name, owner, species, sex, birth, death) VALUES (%s,%s,%s,%s,%s,%s)"
-val = [
-    ('Fluffy', 'Harold', 'cat', 'f', '1993-02-04', None),
-    ('Claws', 'Gwen', 'cat', 'm', '1994-03-17', None),
-    ('Buffy', 'Harold', 'dog', 'f', '1989-05-13', None),
-    ('Fang', 'Benny', 'dog', 'm', '1990-08-27', None),
-    ('Bowser', 'Diane', 'dog', 'm', '1979-08-31', '1995-07-29'),
-    ('Chirpy', 'Gwen', 'bird', 'f', '1998-09-11', None),
-    ('Whistler', 'Gwen', 'cat', None, '1997-12-09', None),
-    ('Slim', 'Benny', 'snake', 'm', '1996-04-29', None),
-    ('Puffball', 'diane', 'hamster', 'f', '1998-03-30', None)
-]
 
-mycursor.executemany(sql, val)
+def deposit(name):
+    amount = float(input("Enter deposit amount: "))
 
-mydb.commit()
+    mycursor.execute(f"SELECT * FROM account_info WHERE name ='{name}'")
+    account_data = mycursor.fetchall()
+    balance = account_data[0][2]
+    amount = balance + amount
+    sql = f"UPDATE account_info SET balance='{amount}' WHERE name='{name}'"
 
-print(mycursor.rowcount, "was inserted.")
+    mycursor.execute(sql)
+    mydb.commit()
 
-# Display all records in pets table
+    view_balance(name)
 
-mycursor = mydb.cursor()
 
-mycursor.execute("SELECT * FROM pets")
+def withdraw(name):
+    amount = float(input("Enter withdrawal amount: "))
+    print("")
 
-myresult = mycursor.fetchall()
+    mycursor.execute(f"SELECT * FROM account_info WHERE name ='{name}'")
+    account_data = mycursor.fetchall()
+    balance = account_data[0][2]
+    amount = balance - amount
+    sql = f"UPDATE account_info SET balance='{amount}' WHERE name='{name}'"
 
-for x in myresult:
-  print(x)
+    mycursor.execute(sql)
+    mydb.commit()
 
-# Show records of female dogs in the pets table
+    view_balance(name)
 
-mycursor = mydb.cursor()
 
-sql = "SELECT * FROM pets WHERE sex ='f'"
+def view_balance(name):
+    mycursor.execute(f"SELECT * FROM account_info WHERE name ='{name}'")
+    account_data = mycursor.fetchall()
+    balance = account_data[0][2]
+    print(f"Account balance is ${balance:,.2f}")
 
-mycursor.execute(sql)
 
-myresult = mycursor.fetchall()
+def loading():
+    print("*", end=" ")
+    time.sleep(1)
+    print("*", end=" ")
+    time.sleep(1)
+    print("*", end=" ")
 
-for x in myresult:
-   print(x)
 
-# Show name and birth columns from the pets table
-
-mycursor = mydb.cursor()
-
-mycursor.execute("SELECT name, birth FROM pets")
-
-myresult = mycursor.fetchall()
-
-for x in myresult:
-    print(x)
-
-# Show how many pets each owner has
-
-mycursor = mydb.cursor()
-
-mycursor.execute("SELECT owner, COUNT(*) FROM pets GROUP BY owner")
-
-myresult = mycursor.fetchall()
-
-for x in myresult:
-    print (x)
-
-# Show name, birth and month(birth) from pets table
-
-mycursor = mydb.cursor()
-
-mycursor.execute("SELECT name, birth, MONTH(birth) FROM pets ")
-
-myresult = mycursor.fetchall()
-
-for x in myresult:
-    print(x)
+main()
